@@ -21,13 +21,15 @@ build:
 requirements:
   host:
     - python
+    - pip
+    - wheel
     - setuptools
 
   run:
     - python
     - six >=1.9.0
     - pytimeparse >=1.1.5
-    - parsedatetime >=2.1
+    - parsedatetime >=2.1,!=2.5,!=2.6
     - babel >=2.0
     - isodate >=0.5.4
     - python-slugify >=1.2.1
@@ -41,6 +43,10 @@ test:
     - agate.data_types
     - agate.table
     - agate.tableset
+  requires:
+    - pip
+  commands:
+    - pip check
 
 about:
   home: http://agate.readthedocs.org/
@@ -49,7 +55,7 @@ about:
   license: COPYING
   summary: 'A data analysis library that is optimized for humans instead of machines.'
   doc_url: http://agate.rtfd.org/
-  dev_url: http://agate.rtfd.org/
+  dev_url: https://github.com/wireservice/agate
 
 extra:
   recipe-maintainers:
