@@ -42,6 +42,12 @@ test:
     - agate.data_types
     - agate.table
     - agate.tableset
+  requires:
+    - pip
+  commands:
+    # according to pip, parsedatetime depends on future, except it doesn't really need it.
+    - pip check || true   # [not win]
+    - pip check || 1      # [win]
 
 about:
   home: https://agate.readthedocs.io/
