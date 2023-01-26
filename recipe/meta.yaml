@@ -17,7 +17,7 @@ source:
 build:
   number: {{ build_num }}
   script: {{ PYTHON }} -m pip install . --no-deps -vv
-  skip: true  # [py<37]
+  skip: true  # [s390x or py<37]
 
 requirements:
   host:
@@ -46,8 +46,8 @@ test:
     - pip
   commands:
     # according to pip, parsedatetime depends on future, except it doesn't really need it.
-    - pip check || true   # [not win]
-    - pip check || 1      # [win]
+    - pip check || true  # [not win]
+    - pip check || cmd /K "exit /b 0"  # [win]
 
 about:
   home: https://agate.readthedocs.io/
