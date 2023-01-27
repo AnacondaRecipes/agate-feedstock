@@ -1,9 +1,9 @@
 {%set name = "agate" %}
-{% set version = "1.6.2" %}
+{% set version = "1.7.1" %}
 {%set compress_type = "tar.gz" %}
 {%set hash_type = "sha256" %}
-{% set hash_val = "8dbd4a57a2cffecfa2d8109ef5993ec4be12a8a7c81fbc0c8c79d96d4c4399ed" %}
-{%set build_num = "2" %}
+{% set hash_val = "eadf46d980168b8922d5d396d6258eecd5e7dbef7e6f0c0b71e968545ea96389" %}
+{%set build_num = "0" %}
 
 package:
   name: {{ name|lower }}
@@ -16,18 +16,19 @@ source:
 
 build:
   number: {{ build_num }}
-  script: python setup.py install --single-version-externally-managed --record=record.txt
+  script: {{ PYTHON }} -m pip install . --no-deps -vv
+  skip: true  # [s390x or py<37]
 
 requirements:
   host:
     - python
     - setuptools
-
+    - pip
+    - wheel
   run:
     - python
-    - six >=1.9.0
     - pytimeparse >=1.1.5
-    - parsedatetime >=2.1
+    - parsedatetime >=2.1,!=2.5
     - babel >=2.0
     - isodate >=0.5.4
     - python-slugify >=1.2.1
@@ -41,15 +42,24 @@ test:
     - agate.data_types
     - agate.table
     - agate.tableset
+  requires:
+    - pip
+  commands:
+    # according to pip, parsedatetime depends on future, except it doesn't really need it.
+    - pip check || true  # [not win]
+    - pip check || cmd /K "exit /b 0"  # [win]
 
 about:
-  home: http://agate.readthedocs.org/
+  home: https://agate.readthedocs.io/
   license: MIT
   license_family: MIT
-  license: COPYING
-  summary: 'A data analysis library that is optimized for humans instead of machines.'
-  doc_url: http://agate.rtfd.org/
-  dev_url: http://agate.rtfd.org/
+  license_file: COPYING
+  summary: A data analysis library that is optimized for humans instead of machines.
+  description: |
+    agate is a Python data analysis library that is optimized for humans instead of machines. 
+    It is an alternative to numpy and pandas that solves real-world problems with readable code.
+  doc_url: https://agate.readthedocs.io/
+  dev_url: https://github.com/wireservice/agate
 
 extra:
   recipe-maintainers:
