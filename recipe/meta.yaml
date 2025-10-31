@@ -1,23 +1,18 @@
-{%set name = "agate" %}
-{% set version = "1.7.1" %}
-{%set compress_type = "tar.gz" %}
-{%set hash_type = "sha256" %}
-{% set hash_val = "eadf46d980168b8922d5d396d6258eecd5e7dbef7e6f0c0b71e968545ea96389" %}
-{%set build_num = "0" %}
+{% set name = "agate" %}
+{% set version = "1.13.0" %}
 
 package:
   name: {{ name|lower }}
   version: {{ version }}
 
 source:
-  fn: {{ name }}-{{ version }}.{{ compress_type }}
-  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.{{ compress_type }}
-  {{ hash_type }}: {{ hash_val }}
+  url: https://pypi.org/packages/source/{{ name[0] }}/{{ name }}/agate-{{ version }}.tar.gz
+  sha256: 24bc3d3cbd165aa3ab0ef9e798dd4c53ad703012d450fe89b9c26b239505c445
 
 build:
-  number: {{ build_num }}
-  script: {{ PYTHON }} -m pip install . --no-deps -vv
-  skip: true  # [s390x or py<37]
+  number: 0
+  script: {{ PYTHON }} -m pip install . --no-deps --no-build-isolation --ignore-installed --no-cache-dir -vvv
+  skip: true  # [py<38 or py>312]
 
 requirements:
   host:
@@ -33,24 +28,65 @@ requirements:
     - isodate >=0.5.4
     - python-slugify >=1.2.1
     - leather >=0.3.2
+    - python-tzdata >=2023.3  # [win]
+
+# FAILED tests/test_data_types.py::TestDateTime::test_cast_format_locale -
+# AssertionError: CastError('Value "1994-03-01 12:30 오후" does not match date format.')
+{% set ignore_tests = "test_cast_format_locale" %}
+
+
+# self = <encodings.cp1252.IncrementalDecoder object at 0x000002A9D9693350>
+# input = b'{\n    "1": {\n        "number": 1.0,\n        "text": "a",\n        "boolean": true,\n        "date": "'
+# final = True
+#     def decode(self, input, final=False):
+# >       return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+#                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# E       UnicodeDecodeError: 'charmap' codec can't decode byte 0x8d in position 247: character maps to <undefined>
+# ..\_test_env\Lib\encodings\cp1252.py:23: UnicodeDecodeError
+{% set ignore_tests_win = " --ignore=tests/test_table/test_bins.py" %}
+{% set ignore_tests_win = ignore_tests_win + " --ignore=tests/test_table/test_print_bars.py" %}
+{% set ignore_tests_win = ignore_tests_win + " --ignore=tests/test_table/test_to_csv.py" %}
+{% set ignore_tests_win = ignore_tests_win + " --ignore=tests/test_table/test_to_json.py" %}
 
 test:
+  source_files:
+    - tests
+    - examples
   imports:
     - agate
     - agate.aggregations
+    - agate.columns
     - agate.computations
+    - agate.config
+    - agate.csv_py3
     - agate.data_types
+    - agate.exceptions
+    - agate.mapped_sequence
+    - agate.rows
     - agate.table
     - agate.tableset
+    - agate.testcase
+    - agate.type_tester
+    - agate.utils
+    - agate.warns
   requires:
     - pip
+    - lxml
+    - cssselect
+    - pytest
   commands:
-    # according to pip, parsedatetime depends on future, except it doesn't really need it.
-    - pip check || true  # [not win]
-    - pip check || cmd /K "exit /b 0"  # [win]
+    - pip check
+    - python -c "from importlib.metadata import version; assert(version('{{ name }}')=='{{ version }}')"
+    - set "PYTHONUTF8=1"                      # [win]
+    - set "PYTHONIOENCODING=UTF-8"            # [win]
+    - set "PYTHONLEGACYWINDOWSFSENCODING=1"   # [win]
+    - export LC_ALL=C.UTF-8                   # [unix]
+    - export LANG=C.UTF-8                     # [unix]
+    - pytest -ra -vv tests -k "not {{ ignore_tests }}"      # [unix]
+    - pytest -ra -vv tests {{ ignore_tests_win }} -k "not test_print_table_max_precision"  # [win]
 
 about:
-  home: https://agate.readthedocs.io/
+  home: https://agate.readthedocs.io
   license: MIT
   license_family: MIT
   license_file: COPYING
@@ -58,7 +94,7 @@ about:
   description: |
     agate is a Python data analysis library that is optimized for humans instead of machines. 
     It is an alternative to numpy and pandas that solves real-world problems with readable code.
-  doc_url: https://agate.readthedocs.io/
+  doc_url: https://agate.readthedocs.io
   dev_url: https://github.com/wireservice/agate
 
 extra:
