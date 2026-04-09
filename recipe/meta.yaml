@@ -1,52 +1,46 @@
 {% set name = "agate" %}
-{% set version = "1.13.0" %}
+{% set version = "1.14.2" %}
 
 package:
   name: {{ name|lower }}
   version: {{ version }}
 
 source:
-  url: https://pypi.org/packages/source/{{ name[0] }}/{{ name }}/agate-{{ version }}.tar.gz
-  sha256: 24bc3d3cbd165aa3ab0ef9e798dd4c53ad703012d450fe89b9c26b239505c445
+  url: https://pypi.org/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+  sha256: 7f29841c39d84b1de7fde762b8d792085371515324f3a01413b20f810398225b
 
 build:
   number: 0
+  skip: true  # [py<310]
   script: {{ PYTHON }} -m pip install . --no-deps --no-build-isolation --ignore-installed --no-cache-dir -vvv
-  skip: true  # [py<38 or py>312]
 
 requirements:
   host:
-    - python
-    - setuptools
     - pip
+    - python
+    - setuptools >=61
     - wheel
   run:
     - python
-    - pytimeparse >=1.1.5
-    - parsedatetime >=2.1,!=2.5
     - babel >=2.0
     - isodate >=0.5.4
-    - python-slugify >=1.2.1
     - leather >=0.3.2
+    - parsedatetime >=2.1,!=2.5
+    - python-slugify >=1.2.1
+    - pytimeparse >=1.1.5
     - python-tzdata >=2023.3  # [win]
 
-# FAILED tests/test_data_types.py::TestDateTime::test_cast_format_locale -
+{% set ignore_tests = "" %}
+
 # AssertionError: CastError('Value "1994-03-01 12:30 오후" does not match date format.')
-{% set ignore_tests = "test_cast_format_locale" %}
+{% set ignore_tests = ignore_tests + " --deselect=tests/test_data_types.py::TestDateTime::test_cast_format_locale" %}  # [osx]
 
-
-# self = <encodings.cp1252.IncrementalDecoder object at 0x000002A9D9693350>
-# input = b'{\n    "1": {\n        "number": 1.0,\n        "text": "a",\n        "boolean": true,\n        "date": "'
-# final = True
-#     def decode(self, input, final=False):
-# >       return codecs.charmap_decode(input,self.errors,decoding_table)[0]
-#                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-# E       UnicodeDecodeError: 'charmap' codec can't decode byte 0x8d in position 247: character maps to <undefined>
-# ..\_test_env\Lib\encodings\cp1252.py:23: UnicodeDecodeError
-{% set ignore_tests_win = " --ignore=tests/test_table/test_bins.py" %}
-{% set ignore_tests_win = ignore_tests_win + " --ignore=tests/test_table/test_print_bars.py" %}
-{% set ignore_tests_win = ignore_tests_win + " --ignore=tests/test_table/test_to_csv.py" %}
-{% set ignore_tests_win = ignore_tests_win + " --ignore=tests/test_table/test_to_json.py" %}
+# TypeError: ("Empty locale identifier value: None\n\nIf you didn't explicitly pass an empty value to a Babel function, this could be c)
+{% set ignore_tests = ignore_tests + " --ignore=tests/test_table/test_bins.py" %}        # [win]
+{% set ignore_tests = ignore_tests + " --ignore=tests/test_table/test_print_bars.py" %}  # [win]
+{% set ignore_tests = ignore_tests + " --ignore=tests/test_table/test_to_csv.py" %}      # [win]
+{% set ignore_tests = ignore_tests + " --ignore=tests/test_table/test_to_json.py" %}     # [win]
+{% set ignore_tests = ignore_tests + " --deselect=tests/test_table/test_print_table.py::TestPrintTable::test_print_table_max_precision" %}  # [win]
 
 test:
   source_files:
@@ -82,8 +76,7 @@ test:
     - set "PYTHONLEGACYWINDOWSFSENCODING=1"   # [win]
     - export LC_ALL=C.UTF-8                   # [unix]
     - export LANG=C.UTF-8                     # [unix]
-    - pytest -ra -vv tests -k "not {{ ignore_tests }}"      # [unix]
-    - pytest -ra -vv tests {{ ignore_tests_win }} -k "not test_print_table_max_precision"  # [win]
+    - pytest -ra -vv tests {{ ignore_tests }}
 
 about:
   home: https://agate.readthedocs.io
